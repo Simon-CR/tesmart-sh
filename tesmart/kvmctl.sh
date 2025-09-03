@@ -16,7 +16,7 @@ SPEED="9600"
 DEVICE=""
 
 # The number of ports available on the KVM
-PORTS=16
+PORTS=8
 
 # Prints the command usage and exits
 function usage {
@@ -49,10 +49,10 @@ function sendCommand {
     # Network communication requires a delay for stability.
     sleep 1
 
-    # The -l6 is required to read response without waiting for a newline.
-    # Beware gnu-netcat hangs waiting for something, openbsd-netcat works fine.
+    # Read response from netcat. Different netcat implementations handle this differently.
+    # Use timeout and dd to read exactly 6 bytes for compatibility across systems.
     response=$(
-      echo $request | xxd -r -p | nc ${ADDRESS} ${PORT} | xxd -p -l6 2>/dev/null \
+      (echo $request | xxd -r -p; sleep 0.5) | nc ${ADDRESS} ${PORT} | dd bs=6 count=1 2>/dev/null | xxd -p 2>/dev/null \
       || echo ff
     )
   fi
@@ -64,6 +64,8 @@ function sendCommand {
     echo "Unrecognized response $response for request $request." >&2
     echo ff
   else
+    # Extract the data byte (characters 9-10) from the response
+    # The response format is: aabb03 11 XX YY where XX is the data and YY is termination
     echo $response | cut -c 9-10
   fi
 }
