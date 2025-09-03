@@ -50,9 +50,9 @@ function sendCommand {
     sleep 1
 
     # Read response from netcat. Different netcat implementations handle this differently.
-    # Use timeout and dd to read exactly 6 bytes for compatibility across systems.
+    # KVM sends response in chunks, so we need adequate delay and proper reading.
     response=$(
-      (echo $request | xxd -r -p; sleep 0.5) | nc ${ADDRESS} ${PORT} | dd bs=6 count=1 2>/dev/null | xxd -p 2>/dev/null \
+      (echo $request | xxd -r -p; sleep 1.5) | nc ${ADDRESS} ${PORT} | xxd -p 2>/dev/null \
       || echo ff
     )
   fi
@@ -144,7 +144,8 @@ function setPort {
 
   # Collect the output but don't rely on it. The command may still be
   # successful but won't print the new port number anyway.
-  hexval=$(printf '%.2X\n' ${1})
+  # Convert from 1-based user input to 0-based protocol value
+  hexval=$(printf '%.2X\n' $((${1}-1)))
   out=$(sendCommand "01${hexval}")
 
   # If a valid value was returned when the port was changed, it would have
