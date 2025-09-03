@@ -144,8 +144,8 @@ function setPort {
 
   # Collect the output but don't rely on it. The command may still be
   # successful but won't print the new port number anyway.
-  # Convert from 1-based user input to 0-based protocol value
-  hexval=$(printf '%.2X\n' $((${1}-1)))
+  # Protocol uses 1-based values for setting ports (0x01-0x08)
+  hexval=$(printf '%.2X\n' ${1})
   out=$(sendCommand "01${hexval}")
 
   # If a valid value was returned when the port was changed, it would have
